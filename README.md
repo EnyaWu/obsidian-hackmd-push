@@ -20,10 +20,6 @@ One-click push your Obsidian notes to [HackMD](https://hackmd.io).
 
 Only `main.js` and `manifest.json` are required to run the plugin.
 
-### Via Community Plugin Browser (coming soon)
-
-Search for **HackMD Push** once it is listed in the official directory.
-
 ## Setup
 
 1. Open **Settings → HackMD Push**
@@ -46,9 +42,9 @@ With any Markdown note open:
 On first push the plugin creates a new HackMD note and writes three fields into your frontmatter:
 
 ```yaml
-hackmd-id: <note id>
-hackmd-url: https://hackmd.io/@you/your-note
-hackmd-pushed-at: 2025-01-01T00:00:00.000Z
+hackmd-id: abc123xyz
+hackmd-url: https://hackmd.io/@username/note-slug
+hackmd-pushed-at: 2026-07-28T00:00:00.000Z
 ```
 
 Subsequent pushes update the same remote note.

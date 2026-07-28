@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFile } from "obsidian";
+import { Modal, Notice, Plugin, TFile } from "obsidian";
 import { HackMDPushSettings, HackMDPushSettingTab, DEFAULT_SETTINGS } from "./settings";
 import { HackMDClient, HackMDError } from "./hackmd-client";
 import { readHackMDMeta, writeHackMDMeta } from "./frontmatter";
@@ -249,21 +249,37 @@ export default class HackMDPushPlugin extends Plugin {
 
 	private confirmRecreate(): Promise<boolean> {
 		return new Promise((resolve) => {
-			const notice = new Notice("", 0);
-			const container = notice.messageEl;
-			container.empty();
-			container.createEl("div", { text: "遠端筆記已刪除。要重新建立嗎？" });
-			const btnRow = container.createEl("div", {
-				attr: { style: "margin-top: 8px; display: flex; gap: 8px;" },
-			});
-			btnRow.createEl("button", { text: "重新建立" }).addEventListener("click", () => {
-				notice.hide();
-				resolve(true);
-			});
-			btnRow.createEl("button", { text: "取消" }).addEventListener("click", () => {
-				notice.hide();
-				resolve(false);
-			});
+			const modal = new ConfirmModal(this.app, resolve);
+			modal.open();
 		});
+	}
+}
+
+class ConfirmModal extends Modal {
+	private resolve: (value: boolean) => void;
+
+	constructor(app: import("obsidian").App, resolve: (value: boolean) => void) {
+		super(app);
+		this.resolve = resolve;
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.createEl("p", { text: "遠端筆記已刪除。要重新建立嗎？" });
+		const btnRow = contentEl.createEl("div", { cls: "modal-button-container" });
+		const confirmBtn = btnRow.createEl("button", { text: "重新建立", cls: "mod-cta" });
+		confirmBtn.onclick = () => {
+			this.resolve(true);
+			this.close();
+		};
+		const cancelBtn = btnRow.createEl("button", { text: "取消" });
+		cancelBtn.onclick = () => {
+			this.resolve(false);
+			this.close();
+		};
+	}
+
+	onClose() {
+		this.contentEl.empty();
 	}
 }
