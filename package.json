@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-hackmd-push",
-	"version": "0.3.0",
+	"version": "0.4.0",
 	"description": "Push your notes to HackMD with one click.",
 	"main": "main.js",
 	"scripts": {
