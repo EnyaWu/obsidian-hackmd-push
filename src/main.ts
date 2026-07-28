@@ -11,35 +11,35 @@ export default class HackMDPushPlugin extends Plugin {
 
 		// Ribbon icon
 		this.addRibbonIcon("upload-cloud", "Push to HackMD", () => {
-			this.pushCurrentNote();
+			void this.pushCurrentNote();
 		});
 
 		// Command: push
 		this.addCommand({
 			id: "push-to-hackmd",
 			name: "Push current note to HackMD",
-			callback: () => this.pushCurrentNote(),
+			callback: () => { void this.pushCurrentNote(); },
 		});
 
 		// Command: copy link
 		this.addCommand({
 			id: "copy-hackmd-link",
 			name: "Copy HackMD link",
-			callback: () => this.copyLink(),
+			callback: () => { this.copyLink(); },
 		});
 
 		// Command: open in browser
 		this.addCommand({
 			id: "open-in-hackmd",
 			name: "Open in HackMD",
-			callback: () => this.openInBrowser(),
+			callback: () => { this.openInBrowser(); },
 		});
 
 		// Command: unlink
 		this.addCommand({
 			id: "unlink-hackmd",
 			name: "Unlink from HackMD",
-			callback: () => this.unlinkNote(),
+			callback: () => { void this.unlinkNote(); },
 		});
 
 		// Settings tab
@@ -47,7 +47,8 @@ export default class HackMDPushPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const loaded: unknown = await this.loadData();
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded as Partial<HackMDPushSettings>);
 	}
 
 	async saveSettings() {
@@ -83,7 +84,7 @@ export default class HackMDPushPlugin extends Plugin {
 			} else {
 				await this.createNewNote(client, file, title, content, tags);
 			}
-		} catch (e) {
+		} catch (e: unknown) {
 			this.handleError(e);
 		}
 	}
@@ -132,7 +133,7 @@ export default class HackMDPushPlugin extends Plugin {
 			const proceed = await this.confirmRecreate();
 			if (!proceed) return;
 			// Unlink and create fresh
-			await this.app.fileManager.processFrontMatter(file, (fm) => {
+			await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
 				delete fm["hackmd-id"];
 				delete fm["hackmd-url"];
 				delete fm["hackmd-pushed-at"];
@@ -145,15 +146,15 @@ export default class HackMDPushPlugin extends Plugin {
 		await client.updateNote(noteId, { content, title, tags });
 
 		// Update pushed-at timestamp
-		await this.app.fileManager.processFrontMatter(file, (fm) => {
+		await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
 			fm["hackmd-pushed-at"] = new Date().toISOString();
 		});
 
 		new Notice("已更新 HackMD 筆記 ✓");
 
 		if (this.settings.openBrowserAfterPush) {
-			const meta = readHackMDMeta(this.app, file);
-			if (meta["hackmd-url"]) window.open(meta["hackmd-url"]);
+			const updatedMeta = readHackMDMeta(this.app, file);
+			if (updatedMeta["hackmd-url"]) window.open(updatedMeta["hackmd-url"]);
 		}
 	}
 
@@ -170,17 +171,18 @@ export default class HackMDPushPlugin extends Plugin {
 
 	private getNoteTitle(file: TFile): string {
 		const cache = this.app.metadataCache.getFileCache(file);
-		const fmTitle = cache?.frontmatter?.title;
+		const fm: Record<string, unknown> | undefined = cache?.frontmatter;
+		const fmTitle: unknown = fm?.["title"];
 		if (fmTitle && typeof fmTitle === "string") return fmTitle;
 		return file.basename;
 	}
 
 	private getNoteTags(file: TFile): string[] {
 		const cache = this.app.metadataCache.getFileCache(file);
-		const fmTags = cache?.frontmatter?.tags;
+		const fm: Record<string, unknown> | undefined = cache?.frontmatter;
+		const fmTags: unknown = fm?.["tags"];
 		if (!fmTags) return [];
 
-		// Obsidian stores tags as string or string[]
 		if (typeof fmTags === "string") return [fmTags];
 		if (Array.isArray(fmTags)) return fmTags.map(String).filter(Boolean);
 		return [];
@@ -196,7 +198,7 @@ export default class HackMDPushPlugin extends Plugin {
 			new Notice("此筆記尚未上傳至 HackMD");
 			return;
 		}
-		navigator.clipboard.writeText(meta["hackmd-url"]);
+		void navigator.clipboard.writeText(meta["hackmd-url"]);
 		new Notice("HackMD 連結已複製 ✓");
 	}
 
@@ -219,7 +221,7 @@ export default class HackMDPushPlugin extends Plugin {
 			new Notice("此筆記未連結 HackMD");
 			return;
 		}
-		await this.app.fileManager.processFrontMatter(file, (fm) => {
+		await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
 			delete fm["hackmd-id"];
 			delete fm["hackmd-url"];
 			delete fm["hackmd-pushed-at"];
@@ -239,28 +241,29 @@ export default class HackMDPushPlugin extends Plugin {
 			}
 		} else {
 			new Notice("HackMD 連線失敗，請檢查網路");
-			console.error("[HackMD Push]", e);
+			if (e instanceof Error) {
+				console.error("[HackMD Push]", e.message);
+			}
 		}
 	}
 
 	private confirmRecreate(): Promise<boolean> {
 		return new Promise((resolve) => {
 			const notice = new Notice("", 0);
-			const frag = document.createDocumentFragment();
-			frag.createEl("div", { text: "遠端筆記已刪除。要重新建立嗎？" });
-			const btnContainer = frag.createEl("div", {
+			const container = notice.messageEl;
+			container.empty();
+			container.createEl("div", { text: "遠端筆記已刪除。要重新建立嗎？" });
+			const btnRow = container.createEl("div", {
 				attr: { style: "margin-top: 8px; display: flex; gap: 8px;" },
 			});
-			btnContainer.createEl("button", { text: "重新建立" }).onclick = () => {
+			btnRow.createEl("button", { text: "重新建立" }).addEventListener("click", () => {
 				notice.hide();
 				resolve(true);
-			};
-			btnContainer.createEl("button", { text: "取消" }).onclick = () => {
+			});
+			btnRow.createEl("button", { text: "取消" }).addEventListener("click", () => {
 				notice.hide();
 				resolve(false);
-			};
-			notice.noticeEl.empty();
-			notice.noticeEl.appendChild(frag);
+			});
 		});
 	}
 }

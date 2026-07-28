@@ -88,7 +88,7 @@ Your API token is stored in plain text at `.obsidian/plugins/hackmd-push/data.js
 ## Development
 
 ```bash
-git clone https://github.com/your-username/obsidian-hackmd-push
+git clone https://github.com/EnyaWu/obsidian-hackmd-push
 cd obsidian-hackmd-push
 npm install
 

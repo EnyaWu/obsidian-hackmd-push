@@ -34,7 +34,7 @@ export class HackMDPushSettingTab extends PluginSettingTab {
 
 		// ── Token section ──────────────────────────────
 
-		containerEl.createEl("h2", { text: "HackMD 連線" });
+		new Setting(containerEl).setName("HackMD 連線").setHeading();
 
 		// Step 1: open browser
 		new Setting(containerEl)
@@ -56,9 +56,8 @@ export class HackMDPushSettingTab extends PluginSettingTab {
 				.setPlaceholder("貼上你的 HackMD API Token")
 				.setValue(this.plugin.settings.token)
 				.then((t) => {
-					// mask input
 					t.inputEl.type = "password";
-					t.inputEl.style.width = "300px";
+					t.inputEl.setCssProps({ "--input-width": "300px" });
 				})
 				.onChange(async (value) => {
 					this.plugin.settings.token = value.trim();
@@ -88,7 +87,7 @@ export class HackMDPushSettingTab extends PluginSettingTab {
 							this.plugin.settings.verifiedUserName = user.name;
 							await this.plugin.saveSettings();
 							new Notice(`已連結：${user.name}`);
-						} catch (e) {
+						} catch (e: unknown) {
 							this.plugin.settings.verifiedUserName = "";
 							await this.plugin.saveSettings();
 							if (e instanceof HackMDError) {
@@ -105,7 +104,7 @@ export class HackMDPushSettingTab extends PluginSettingTab {
 
 		// ── Permission defaults ──────────────────────────
 
-		containerEl.createEl("h2", { text: "預設權限" });
+		new Setting(containerEl).setName("預設權限").setHeading();
 
 		new Setting(containerEl)
 			.setName("閱讀權限")
@@ -159,7 +158,7 @@ export class HackMDPushSettingTab extends PluginSettingTab {
 
 		// ── Behavior ──────────────────────────
 
-		containerEl.createEl("h2", { text: "行為" });
+		new Setting(containerEl).setName("行為").setHeading();
 
 		new Setting(containerEl)
 			.setName("上傳後開啟瀏覽器")

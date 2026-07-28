@@ -59,7 +59,7 @@ export class HackMDClient {
 		const resp = await requestUrl(params);
 		let json: unknown = null;
 		try {
-			json = resp.json;
+			json = resp.json as unknown;
 		} catch {
 			// Empty body (e.g. 202 Accepted from PATCH) — not an error
 		}
@@ -97,7 +97,6 @@ export class HackMDClient {
 		// Only send tags when non-empty — sending [] would clear remote tags on HackMD
 		if (opts.tags !== undefined && opts.tags.length > 0) body.tags = opts.tags;
 
-		console.log("[HackMD Push] PATCH body size:", JSON.stringify(body).length, "content length:", String(opts.content).length);
 		const { status } = await this.request("PATCH", `/notes/${noteId}`, body);
 		if (status === 401) throw new HackMDError(401, "Token 無效或已過期");
 		if (status === 403) throw new HackMDError(403, "無權限更新此筆記");

@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-hackmd-push",
-	"version": "0.1.0",
-	"description": "One-click push your notes to HackMD",
+	"version": "0.2.0",
+	"description": "Push your notes to HackMD with one click.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
@@ -9,7 +9,6 @@
 	},
 	"devDependencies": {
 		"@types/node": "^20.11.0",
-		"builtin-modules": "^3.3.0",
 		"esbuild": "^0.20.0",
 		"obsidian": "latest",
 		"typescript": "^5.3.0"
