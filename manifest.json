@@ -1,8 +1,8 @@
 {
 	"id": "hackmd-push",
 	"name": "HackMD Push",
-	"version": "0.4.0",
-	"minAppVersion": "1.4.0",
+	"version": "0.5.0",
+	"minAppVersion": "1.4.4",
 	"description": "Push your notes to HackMD with one click.",
 	"author": "Enya",
 	"isDesktopOnly": false
