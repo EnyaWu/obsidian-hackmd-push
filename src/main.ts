@@ -163,8 +163,14 @@ export default class HackMDPushPlugin extends Plugin {
 	private async getContentForUpload(file: TFile): Promise<string> {
 		let content = await this.app.vault.read(file);
 
-		// Strip frontmatter
-		content = content.replace(/^---\n[\s\S]*?\n---\n?/, "");
+		// Normalize line endings first — files saved with CRLF (common on
+		// Windows) would otherwise not match the frontmatter pattern below,
+		// leaving the raw YAML block in the uploaded content.
+		content = content.replace(/\r\n?/g, "\n");
+
+		// Strip frontmatter. The inner group is optional so an empty
+		// frontmatter block (---\n---\n) is also handled correctly.
+		content = content.replace(/^---\n([\s\S]*?)\n?---\n?/, "");
 
 		return content.trim();
 	}

@@ -90,12 +90,13 @@ export class HackMDClient {
 		return json as HackMDNote;
 	}
 
-	/** Update an existing note's content, title, and tags */
+	/** Update an existing note's content and title in one call, then tags in a
+	 *  separate call. HackMD's PATCH endpoint has been observed to silently
+	 *  wipe the note content when `tags` is included alongside `content` in
+	 *  the same request, so the two are sent independently. */
 	async updateNote(noteId: string, opts: UpdateNoteOptions): Promise<void> {
 		const body: Record<string, unknown> = { content: opts.content };
 		if (opts.title !== undefined) body.title = opts.title;
-		// Only send tags when non-empty — sending [] would clear remote tags on HackMD
-		if (opts.tags !== undefined && opts.tags.length > 0) body.tags = opts.tags;
 
 		const { status } = await this.request("PATCH", `/notes/${noteId}`, body);
 		if (status === 401) throw new HackMDError(401, "Token 無效或已過期");
@@ -103,6 +104,14 @@ export class HackMDClient {
 		if (status === 404) throw new HackMDError(404, "遠端筆記不存在");
 		if (status === 429) throw new HackMDError(429, "API 呼叫頻率超過限制，請稍後再試");
 		if (status !== 202) throw new HackMDError(status, "更新筆記失敗");
+
+		if (opts.tags !== undefined && opts.tags.length > 0) {
+			const tagsResp = await this.request("PATCH", `/notes/${noteId}`, { tags: opts.tags });
+			// Tags are best-effort: don't fail the whole push if only this part errors
+			if (tagsResp.status !== 202) {
+				console.error("[HackMD Push] Failed to update tags, status:", tagsResp.status);
+			}
+		}
 	}
 
 	/** Check if a note still exists */
