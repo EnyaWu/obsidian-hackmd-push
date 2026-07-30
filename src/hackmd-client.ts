@@ -90,11 +90,21 @@ export class HackMDClient {
 		return json as HackMDNote;
 	}
 
-	/** Update an existing note's content and title in one call, then tags in a
-	 *  separate call. HackMD's PATCH endpoint has been observed to silently
-	 *  wipe the note content when `tags` is included alongside `content` in
-	 *  the same request, so the two are sent independently. */
+	/** Update an existing note's tags first (if any), then content and title
+	 *  in a separate call. HackMD's PATCH endpoint has been observed to
+	 *  silently wipe the note content whenever a `tags`-only request is sent
+	 *  — even as an isolated call, regardless of what preceded it. Sending
+	 *  the content/title update *after* the tags update overwrites that
+	 *  wipe, so tags must go first. */
 	async updateNote(noteId: string, opts: UpdateNoteOptions): Promise<void> {
+		if (opts.tags !== undefined && opts.tags.length > 0) {
+			const tagsResp = await this.request("PATCH", `/notes/${noteId}`, { tags: opts.tags });
+			// Tags are best-effort: don't fail the whole push if only this part errors
+			if (tagsResp.status !== 202) {
+				console.error("[HackMD Push] Failed to update tags, status:", tagsResp.status);
+			}
+		}
+
 		const body: Record<string, unknown> = { content: opts.content };
 		if (opts.title !== undefined) body.title = opts.title;
 
@@ -104,14 +114,6 @@ export class HackMDClient {
 		if (status === 404) throw new HackMDError(404, "遠端筆記不存在");
 		if (status === 429) throw new HackMDError(429, "API 呼叫頻率超過限制，請稍後再試");
 		if (status !== 202) throw new HackMDError(status, "更新筆記失敗");
-
-		if (opts.tags !== undefined && opts.tags.length > 0) {
-			const tagsResp = await this.request("PATCH", `/notes/${noteId}`, { tags: opts.tags });
-			// Tags are best-effort: don't fail the whole push if only this part errors
-			if (tagsResp.status !== 202) {
-				console.error("[HackMD Push] Failed to update tags, status:", tagsResp.status);
-			}
-		}
 	}
 
 	/** Check if a note still exists */
